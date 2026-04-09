@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#007841">
+  <title>Face2 — Face Recognition</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/face2/assets/icon-192-DRC8fMoQ.png">
+  <script type="module" crossorigin src="/face2/assets/main-DvXYhHTk.js"></script>
+  <link rel="modulepreload" crossorigin href="/face2/assets/database-B_f4Ouuh.js">
+  <link rel="modulepreload" crossorigin href="/face2/assets/threat-BUQSDFfV.js">
+  <link rel="modulepreload" crossorigin href="/face2/assets/sync-CYw1jgEe.js">
+  <link rel="stylesheet" crossorigin href="/face2/assets/main-rwb1KccZ.css">
+</head>
+<body>
+  <!-- Shared SVG defs -->
+  <svg style="display:none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="logo-shield" viewBox="0 0 90 100">
+      <path d="M45 5 L85 20 L85 55 Q85 80 45 95 Q5 80 5 55 L5 20 Z" fill="#007841" stroke="#FFE600" stroke-width="2.5"/>
+      <circle cx="45" cy="38" r="9" fill="#fff" opacity="0.9"/>
+      <circle cx="37" cy="48" r="9" fill="#fff" opacity="0.9"/>
+      <circle cx="53" cy="48" r="9" fill="#fff" opacity="0.9"/>
+      <rect x="43" y="52" width="4" height="12" rx="2" fill="#fff" opacity="0.9"/>
+      <circle cx="45" cy="72" r="10" fill="none" stroke="#FFE600" stroke-width="1.5"/>
+      <path d="M35 72 Q45 65 55 72" fill="none" stroke="#FFE600" stroke-width="1"/>
+      <path d="M35 72 Q45 79 55 72" fill="none" stroke="#FFE600" stroke-width="1"/>
+      <line x1="45" y1="62" x2="45" y2="82" stroke="#FFE600" stroke-width="1"/>
+    </symbol>
+  </svg>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="screen active">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <svg width="90" height="100"><use href="#logo-shield"/></svg>
+      </div>
+      <h1>FACE2</h1>
+      <p class="loading-subtitle">Security &bull; Recognition</p>
+      <p id="loading-status">Loading models...</p>
+      <div class="progress-bar">
+        <div id="loading-progress" class="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <svg width="90" height="100"><use href="#logo-shield"/></svg>
+      </div>
+      <h1>FACE2</h1>
+      <p class="loading-subtitle">Security &bull; Recognition</p>
+      <div class="login-form">
+        <input type="text" id="login-user" class="text-input" placeholder="Username" autocomplete="username" autocapitalize="off">
+        <input type="password" id="login-pass" class="text-input" placeholder="Password" autocomplete="current-password">
+        <button id="btn-login" class="primary-btn" style="width:100%; margin-top:0.5rem;">Login</button>
+        <p id="login-error" class="login-error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 1: Live Camera -->
+  <div id="camera-screen" class="screen">
+    <!-- Status Bar -->
+    <div id="status-bar" class="status-bar">
+      <div class="status-left">
+        <span id="status-operator" class="status-operator"></span>
+        <span id="status-detection" class="status-detection status-active">
+          <span class="status-dot"></span>
+          <span id="status-detection-text">ACTIVE</span>
+        </span>
+      </div>
+      <div class="status-right">
+        <label class="extended-toggle-compact">
+          <input type="checkbox" id="chk-extended">
+          <span class="extended-label-compact">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Ext
+          </span>
+        </label>
+        <span id="status-clock" class="status-clock"></span>
+      </div>
+    </div>
+    <div id="offline-banner" class="offline-banner hidden"></div>
+    <div id="banned-banner" class="banned-banner hidden">
+      <span id="banned-banner-text"></span>
+      <button id="banned-banner-dismiss" class="banned-dismiss">&times;</button>
+    </div>
+    <div class="camera-container">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <canvas id="overlay-canvas"></canvas>
+      <div id="face-model-ready" class="face-ready-indicator" title="Face recognition ready">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><polyline points="16 3 18 5 22 1" stroke="#00c853"/></svg>
+      </div>
+      <div id="threat-model-ready" class="threat-ready-indicator" title="Weapon detection ready">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      </div>
+      <button id="btn-record" class="record-btn" aria-label="Record video">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="8"/>
+        </svg>
+      </button>
+      <select id="camera-select" class="camera-select">
+        <option value="">Loading cameras...</option>
+      </select>
+      <!-- Persistent Stats Bar -->
+      <div id="stats-bar" class="stats-bar">
+        <span class="stat-item"><span class="stat-label">Known</span> <span id="stat-known" class="stat-value">0</span></span>
+        <span class="stat-item"><span class="stat-label">Unknown</span> <span id="stat-unknown" class="stat-value">0</span></span>
+        <span class="stat-item stat-vip"><span class="stat-label">VIP</span> <span id="stat-vip" class="stat-value">0</span></span>
+        <span class="stat-item stat-threat"><span class="stat-label">Threats</span> <span id="stat-threats" class="stat-value">0</span></span>
+      </div>
+      <!-- Person info panel (shown on tap) -->
+      <div id="face-info-panel" class="face-info-panel hidden">
+        <div class="face-info-close" id="face-info-close">&times;</div>
+        <div class="face-info-category" id="face-info-category"></div>
+        <div class="face-info-name" id="face-info-name"></div>
+        <div class="face-info-match" id="face-info-match"></div>
+        <div class="face-info-notes" id="face-info-notes"></div>
+      </div>
+      <!-- Live Event Feed -->
+      <div id="event-feed" class="event-feed hidden">
+        <div class="event-feed-header">
+          <span>Live Feed</span>
+          <button id="event-feed-close" class="event-feed-close">&times;</button>
+        </div>
+        <div id="event-feed-list" class="event-feed-list"></div>
+      </div>
+      <!-- Event dashboard overlay -->
+      <div id="dashboard-overlay" class="dashboard-overlay hidden">
+        <div id="dashboard-stats" class="dashboard-stats"></div>
+        <div id="dashboard-feed" class="dashboard-feed"></div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button id="btn-switch-camera" class="toolbar-btn" aria-label="Switch camera">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 16v4a2 2 0 01-2 2h-4M4 8V4a2 2 0 012-2h4"/><polyline points="14 2 20 2 20 8"/><polyline points="10 22 4 22 4 16"/><path d="M20 2L4 22"/></svg>
+        <span class="toolbar-label">Camera</span>
+      </button>
+      <button id="btn-people" class="toolbar-btn" aria-label="People list">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span class="toolbar-label">People</span>
+      </button>
+      <button id="btn-search" class="toolbar-btn" aria-label="Search">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="toolbar-label">Search</span>
+      </button>
+      <button id="btn-feed" class="toolbar-btn" aria-label="Live Feed">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <span class="toolbar-label">Feed</span>
+      </button>
+      <button id="btn-dashboard" class="toolbar-btn" aria-label="Dashboard">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="toolbar-label">Dashboard</span>
+      </button>
+      <button id="btn-settings" class="toolbar-btn" aria-label="Settings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span class="toolbar-label">Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Screen 2: People List -->
+  <div id="people-screen" class="screen">
+    <div class="screen-header">
+      <button id="btn-people-back" class="back-btn">&larr;</button>
+      <h2>Known People <span id="people-count" class="people-count-badge"></span></h2>
+      <button id="btn-people-refresh" class="refresh-btn" aria-label="Refresh" title="Refresh">&#x21bb;</button>
+      <button id="btn-add-person" class="action-btn">+ Add</button>
+    </div>
+    <div id="people-filter" class="people-filter-bar">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="VIP">VIP</button>
+      <button class="filter-tab" data-filter="VVIP">VVIP</button>
+      <button class="filter-tab" data-filter="Staff">Staff</button>
+      <button class="filter-tab" data-filter="Press">Press</button>
+      <button class="filter-tab" data-filter="Banned">Banned</button>
+    </div>
+    <div id="people-grid" class="people-grid">
+      <!-- Populated dynamically -->
+    </div>
+    <p id="people-empty" class="empty-msg">No people enrolled yet.</p>
+  </div>
+
+  <!-- Screen 3: Add Person / Enrollment -->
+  <div id="enroll-screen" class="screen">
+    <div class="screen-header">
+      <button id="btn-enroll-back" class="back-btn">&larr;</button>
+      <h2>Add Person</h2>
+      <button id="btn-enroll-refresh" class="refresh-btn" aria-label="Refresh" title="Refresh">&#x21bb;</button>
+    </div>
+    <div class="enroll-content">
+      <div class="enroll-preview">
+        <video id="enroll-video" autoplay playsinline muted></video>
+        <canvas id="enroll-canvas"></canvas>
+      </div>
+      <input type="text" id="enroll-name" placeholder="Person's name" class="text-input">
+      <select id="enroll-category" class="text-input">
+        <option value="VIP">VIP</option>
+        <option value="VVIP">VVIP</option>
+        <option value="Staff">Staff</option>
+        <option value="Press">Press</option>
+        <option value="Banned">Banned</option>
+      </select>
+      <input type="text" id="enroll-notes" placeholder="Notes (optional)" class="text-input">
+      <div class="enroll-actions">
+        <button id="btn-enroll-capture" class="primary-btn">Capture Face</button>
+        <label class="secondary-btn">
+          Upload Photo
+          <input type="file" id="enroll-upload" accept="image/*" hidden>
+        </label>
+      </div>
+      <label class="enroll-auto-label">
+        <input type="checkbox" id="chk-auto-capture"> Auto-capture faces
+      </label>
+      <div id="enroll-samples" class="sample-count">Samples: 0 / 5</div>
+      <button id="btn-enroll-save" class="primary-btn" disabled>Save Person</button>
+    </div>
+  </div>
+
+  <!-- Screen 4: Settings -->
+  <div id="settings-screen" class="screen">
+    <div class="screen-header">
+      <button id="btn-settings-back" class="back-btn">&larr;</button>
+      <h2>Settings</h2>
+      <button id="btn-settings-refresh" class="refresh-btn" aria-label="Refresh" title="Refresh">&#x21bb;</button>
+    </div>
+    <div class="settings-content">
+      <div class="settings-section">
+        <h3 class="settings-section-title">Session</h3>
+        <div class="setting-item">
+          <label>Operator</label>
+          <span id="settings-operator" class="settings-value"></span>
+        </div>
+        <div class="setting-item">
+          <button id="btn-logout" class="secondary-btn" style="width:100%;">Logout</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Detection</h3>
+        <div class="setting-item">
+          <label for="threshold-slider">Recognition Sensitivity</label>
+          <input type="range" id="threshold-slider" min="0.3" max="0.8" step="0.05" value="0.5">
+          <span id="threshold-value">0.50</span>
+        </div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="chk-unknown-alert" checked> Alert for unknown faces
+          </label>
+          <label for="alert-duration-slider" style="margin-top:0.5rem;">Linger duration: <span id="alert-duration-value">5</span>s</label>
+          <input type="range" id="alert-duration-slider" min="3" max="15" step="1" value="5">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Data Management</h3>
+        <div class="setting-item">
+          <label>Access Log</label>
+          <div class="setting-actions">
+            <button id="btn-view-log" class="secondary-btn">View Log</button>
+            <button id="btn-export-log" class="secondary-btn">Export CSV</button>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label>Face Data</label>
+          <div class="setting-actions">
+            <label class="secondary-btn">
+              Import ZIP
+              <input type="file" id="import-file" accept=".zip" hidden>
+            </label>
+            <button id="btn-export" class="secondary-btn">Export ZIP</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section settings-danger-zone">
+        <h3 class="settings-section-title">Danger Zone</h3>
+        <div class="setting-item">
+          <button id="btn-clear-data" class="danger-btn">Clear All Data</button>
+        </div>
+        <div class="setting-item">
+          <button id="btn-reset-app" class="danger-btn">Reset App (Clear Cache &amp; Reload)</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="about-text">Face2 — Real-time face recognition PWA.<br>
+        Models by vladmandic/human. Free &amp; open source.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Access Log -->
+  <div id="log-screen" class="screen">
+    <div class="screen-header">
+      <button id="btn-log-back" class="back-btn">&larr;</button>
+      <h2>Access Log</h2>
+      <button id="btn-log-refresh" class="refresh-btn" aria-label="Refresh" title="Refresh">&#x21bb;</button>
+      <select id="log-filter" class="action-btn" style="background:var(--bg-input);color:var(--text);border:0.0625rem solid var(--border);font-size:0.8rem;">
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div id="log-list" class="log-list"></div>
+    <p id="log-empty" class="empty-msg">No log entries yet.</p>
+  </div>
+
+  <!-- Search overlay -->
+  <div id="search-overlay" class="search-overlay hidden">
+    <div class="search-panel">
+      <div class="search-header">
+        <input type="text" id="search-input" class="text-input" placeholder="Search by name..." autocomplete="off">
+        <button id="search-close" class="search-close-btn">&times;</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+  </div>
+
+  <!-- Name prompt modal (for tapping unknown face in live view) -->
+  <div id="name-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Who is this?</h3>
+      <img id="modal-face-img" class="modal-face" alt="Detected face">
+      <input type="text" id="modal-name-input" placeholder="Enter name" class="text-input">
+      <select id="modal-category" class="text-input" style="margin-top:0.5rem;">
+        <option value="VIP">VIP</option>
+        <option value="VVIP">VVIP</option>
+        <option value="Staff">Staff</option>
+        <option value="Press">Press</option>
+        <option value="Banned">Banned</option>
+      </select>
+      <input type="text" id="modal-notes" class="text-input" placeholder="Notes (optional)" style="margin-top:0.5rem;">
+      <div class="modal-actions">
+        <button id="btn-modal-cancel" class="secondary-btn">Cancel</button>
+        <button id="btn-modal-save" class="primary-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Person Edit Modal -->
+  <div id="edit-person-modal" class="modal hidden">
+    <div class="modal-content edit-person-modal-content">
+      <h3>Edit Person</h3>
+      <img id="edit-person-img" class="modal-face" alt="Person thumbnail">
+      <input type="text" id="edit-person-name" class="text-input" placeholder="Name">
+      <select id="edit-person-category" class="text-input" style="margin-top:0.5rem;">
+        <option value="VIP">VIP</option>
+        <option value="VVIP">VVIP</option>
+        <option value="Staff">Staff</option>
+        <option value="Press">Press</option>
+        <option value="Banned">Banned</option>
+      </select>
+      <textarea id="edit-person-notes" class="text-input" placeholder="Notes (optional)" rows="3" style="margin-top:0.5rem; resize:vertical;"></textarea>
+      <div id="edit-person-samples" class="sample-count" style="margin-top:0.5rem;"></div>
+      <div id="edit-person-gallery" class="sample-gallery"></div>
+      <div class="modal-actions" style="margin-top:0.75rem;">
+        <button id="btn-edit-delete" class="danger-btn" style="flex:1;">Delete</button>
+        <button id="btn-edit-cancel" class="secondary-btn">Cancel</button>
+        <button id="btn-edit-save" class="primary-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shift Report Modal -->
+  <div id="shift-report-modal" class="modal hidden">
+    <div class="modal-content shift-report-content">
+      <h3>Shift Report</h3>
+      <div class="shift-report-summary">
+        <div class="shift-meta">
+          <div class="shift-meta-item">
+            <span class="shift-meta-label">Operator</span>
+            <span id="shift-operator" class="shift-meta-value"></span>
+          </div>
+          <div class="shift-meta-item">
+            <span class="shift-meta-label">Duration</span>
+            <span id="shift-duration" class="shift-meta-value"></span>
+          </div>
+        </div>
+        <div class="shift-stats">
+          <div class="shift-stat-card">
+            <div id="shift-stat-known" class="shift-stat-value">0</div>
+            <div class="shift-stat-label">Known</div>
+          </div>
+          <div class="shift-stat-card shift-stat-vip">
+            <div id="shift-stat-vip" class="shift-stat-value">0</div>
+            <div class="shift-stat-label">VIP</div>
+          </div>
+          <div class="shift-stat-card shift-stat-unknown">
+            <div id="shift-stat-unknown" class="shift-stat-value">0</div>
+            <div class="shift-stat-label">Unknown</div>
+          </div>
+          <div class="shift-stat-card shift-stat-threat">
+            <div id="shift-stat-threats" class="shift-stat-value">0</div>
+            <div class="shift-stat-label">Threats</div>
+          </div>
+        </div>
+      </div>
+      <div id="shift-feed" class="shift-feed"></div>
+      <div class="modal-actions" style="margin-top:0.75rem;">
+        <button id="btn-shift-export" class="secondary-btn">Export CSV &amp; Logout</button>
+        <button id="btn-shift-logout" class="primary-btn">Logout</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

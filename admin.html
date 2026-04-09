@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face2 — Admin: Enroll Faces</title>
+  <script type="module" crossorigin src="/face2/assets/admin-Ce0CPN0l.js"></script>
+  <link rel="modulepreload" crossorigin href="/face2/assets/database-B_f4Ouuh.js">
+  <link rel="modulepreload" crossorigin href="/face2/assets/sync-CYw1jgEe.js">
+  <link rel="stylesheet" crossorigin href="/face2/assets/admin-HubDdwk9.css">
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <h2>Loading ML Models...</h2>
+    <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    <p id="loading-status" class="status-text">Initializing...</p>
+  </div>
+
+  <!-- Header -->
+  <div class="header-bar">
+    <div class="admin-header">
+      <a href="./index.html" class="btn btn-secondary" style="padding:0.375rem 0.75rem; font-size:0.85rem; font-weight:700;" title="Back to Camera">Camera</a>
+      <svg width="45" height="50" viewBox="0 0 90 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M45 5 L85 20 L85 55 Q85 80 45 95 Q5 80 5 55 L5 20 Z" fill="#007841" stroke="#FFE600" stroke-width="2.5"/>
+        <circle cx="45" cy="38" r="9" fill="#fff" opacity="0.9"/>
+        <circle cx="37" cy="48" r="9" fill="#fff" opacity="0.9"/>
+        <circle cx="53" cy="48" r="9" fill="#fff" opacity="0.9"/>
+        <rect x="43" y="52" width="4" height="12" rx="2" fill="#fff" opacity="0.9"/>
+        <circle cx="45" cy="72" r="10" fill="none" stroke="#FFE600" stroke-width="1.5"/>
+        <path d="M35 72 Q45 65 55 72" fill="none" stroke="#FFE600" stroke-width="1"/>
+        <path d="M35 72 Q45 79 55 72" fill="none" stroke="#FFE600" stroke-width="1"/>
+        <line x1="45" y1="62" x2="45" y2="82" stroke="#FFE600" stroke-width="1"/>
+      </svg>
+      <h1>FACE2 Admin</h1>
+    </div>
+    <p class="subtitle">Enroll faces here. Changes auto-sync to GitHub — recognized on all devices automatically.</p>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="layout">
+    <!-- LEFT: Add Person + Actions -->
+    <div class="col-left">
+      <!-- Add Person Section -->
+      <div class="section">
+        <h2>Add Person</h2>
+        <label for="person-name">Name</label>
+        <input type="text" id="person-name" class="text-input" placeholder="e.g., John Smith">
+
+        <label for="person-category">Category</label>
+        <select id="person-category" class="text-input">
+          <option value="VIP" selected>VIP</option>
+          <option value="VVIP">VVIP</option>
+          <option value="Staff">Staff</option>
+          <option value="Press">Press</option>
+          <option value="Banned">Banned</option>
+        </select>
+
+        <label>Notes (2-3 sentences about this person — shown when tapping their face)</label>
+        <textarea id="person-notes" class="text-input" rows="2" placeholder="e.g., CTO at Acme Corp. Likes coffee."></textarea>
+
+        <label>Photos (upload multiple — different angles recommended)</label>
+        <input type="file" id="photo-input" accept="image/*" multiple style="display:none;">
+        <div class="drop-zone" id="drop-zone">
+          <p>Drag &amp; drop photos here, or click to browse</p>
+        </div>
+        <div class="photo-grid" id="photo-grid"></div>
+
+        <div style="margin-top: 1rem;">
+          <button class="btn btn-primary" id="btn-add-person" disabled>Add Person</button>
+        </div>
+      </div>
+
+      <!-- Push to GitHub -->
+      <div class="section">
+        <h2>Push to GitHub</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Push faces.json directly to your repo. The phone app picks up changes automatically.
+        </p>
+        <label>GitHub Personal Access Token</label>
+        <div class="gh-row">
+          <input type="password" id="gh-token" class="text-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+          <button class="token-toggle" id="btn-toggle-token">Show</button>
+        </div>
+        <label>Repository (owner/repo)</label>
+        <div class="gh-row">
+          <input type="text" id="gh-repo" class="text-input" placeholder="e.g., eejimkos1/face2">
+        </div>
+        <label>Branch</label>
+        <div class="gh-row">
+          <input type="text" id="gh-branch" class="text-input" placeholder="main" value="main">
+        </div>
+        <div class="btn-row" style="margin-top: 0.75rem;">
+          <button class="btn btn-primary" id="btn-push-github">Push to GitHub</button>
+          <button class="btn btn-secondary" id="btn-save-settings">Save Settings</button>
+        </div>
+        <div id="gh-status" class="gh-status info" style="display:none;"></div>
+        <p style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">
+          Create a token at <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:#42a5f5;">github.com/settings/tokens</a>
+          &rarr; Fine-grained &rarr; Select your <code>face2</code> repo &rarr; Permissions: Contents (Read and write).
+          Your token is stored only in this browser.
+        </p>
+        <div style="margin-top: 0.75rem;">
+          <a href="analysis.html" class="btn btn-gold" style="text-decoration:none; display:inline-block; width:100%; text-align:center;">Video Analysis</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Enrolled People (full height) -->
+    <div class="col-right">
+      <!-- Top 50%: Enrolled People -->
+      <div class="right-top">
+        <div class="section" style="height: 100%;">
+          <h2>Enrolled People <span id="people-count" style="font-weight:400; color:var(--text-muted); font-size:0.85rem;"></span></h2>
+          <div class="people-list" id="people-list">
+            <p class="empty" id="empty-msg">No people enrolled yet. Add someone using the form.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom 50%: Edit Person Details -->
+      <div class="right-bottom">
+        <div class="section" style="height: 100%; overflow-y: auto;">
+          <div id="edit-panel" class="edit-panel hidden-panel">
+            <div class="edit-header">
+              <h3>Edit Person</h3>
+              <button class="btn btn-secondary btn-sm" id="btn-edit-cancel">Cancel</button>
+            </div>
+            <label for="edit-name">Name</label>
+            <input type="text" id="edit-name" class="text-input" placeholder="Person's name">
+            <label for="edit-category">Category</label>
+            <select id="edit-category" class="text-input">
+              <option value="VIP">VIP</option>
+              <option value="VVIP">VVIP</option>
+              <option value="Staff">Staff</option>
+              <option value="Press">Press</option>
+              <option value="Banned">Banned</option>
+            </select>
+            <label for="edit-notes">Notes / Description</label>
+            <textarea id="edit-notes" class="text-input" rows="4" placeholder="Notes about this person — shown when tapping their face on camera" style="min-height:5rem;"></textarea>
+            <label>Photos <span id="edit-photo-count" style="font-weight:400; color:var(--text-muted); font-size:0.8rem;"></span></label>
+            <div class="edit-photos" id="edit-photos"></div>
+            <input type="file" id="edit-photo-input" accept="image/*" multiple style="display:none;">
+            <div class="drop-zone" id="edit-drop-zone" style="padding:0.75rem; font-size:0.85rem; margin-top:0.5rem;">
+              <p>+ Drop or click to add more photos</p>
+            </div>
+            <div class="photo-grid" id="edit-photo-grid" style="margin-bottom:0.5rem;"></div>
+            <button class="btn btn-gold" id="btn-edit-save" style="margin-top:0.75rem; width:100%; padding:0.75rem; font-size:1.05rem; letter-spacing:0.03rem;">Save Changes</button>
+            <div id="edit-auto-push-status" class="auto-push-status"></div>
+          </div>
+          <div id="edit-placeholder" class="edit-no-selection">
+            Click "Edit" on a person to see their details here.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

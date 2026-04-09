@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face2 — Video Analysis</title>
+  <script type="module" crossorigin src="/face2/assets/analysis-HQlMR32-.js"></script>
+  <link rel="modulepreload" crossorigin href="/face2/assets/database-B_f4Ouuh.js">
+  <link rel="modulepreload" crossorigin href="/face2/assets/threat-BUQSDFfV.js">
+  <link rel="stylesheet" crossorigin href="/face2/assets/analysis-BvNPZBfA.css">
+</head>
+<body>
+  <a href="./index.html" class="back-link">&larr; Back to Camera</a>
+  <h1>Video Analysis</h1>
+  <p class="subtitle">Upload a video file for frame-by-frame face recognition and threat detection.</p>
+
+  <div class="section">
+    <h2>Upload Video</h2>
+    <div class="upload-zone" id="upload-zone">
+      <p>Drag &amp; drop a video file here, or click to browse</p>
+      <p style="font-size:0.75rem;margin-top:0.5rem;">Supports MP4, WebM</p>
+    </div>
+    <input type="file" id="video-input" accept="video/*" hidden>
+    <video id="source-video" style="display:none;" muted></video>
+
+    <div id="video-preview" style="display:none; margin-bottom:1rem;">
+      <video id="preview-video" style="width:100%;max-height:15rem;border-radius:0.5rem;object-fit:contain;" controls muted></video>
+    </div>
+
+    <h2>Analysis Settings</h2>
+    <label>Sampling Rate: <span id="fps-value">1</span> fps</label>
+    <input type="range" id="fps-slider" min="0.5" max="5" step="0.5" value="1">
+
+    <label>Recognition Threshold: <span id="thresh-value">0.50</span></label>
+    <input type="range" id="thresh-slider" min="0.3" max="0.8" step="0.05" value="0.5">
+
+    <div class="controls-row" style="margin-top:0.75rem;">
+      <label><input type="checkbox" id="chk-extended"> Weapon detection</label>
+    </div>
+
+    <div class="controls-row">
+      <button class="btn-primary" id="btn-analyze" disabled>Analyze Video</button>
+      <button class="btn-danger" id="btn-cancel" style="display:none;">Cancel</button>
+    </div>
+  </div>
+
+  <div id="history-container" class="section" style="display:none;"></div>
+
+  <div id="progress-container"></div>
+  <div id="report-container" class="section" style="display:none;"></div>
+  <div id="playback-container" class="section" style="display:none;"></div>
+
+</body>
+</html>
